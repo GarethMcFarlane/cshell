@@ -141,15 +141,16 @@ int main (int argc, char ** argv)
     char * cmd_args[MAX_ARGS];
     char buf[MAX_BUFFER_SIZE];
     char * prompt = " >> ";
+    char * cwd[MAX_BUFFER_SIZE];
 
     /*** INSERT CALL TO init_shell() HERE ***/
+
   
 
     /*** INSERT YOUR CODE HERE for setting SHELL environment variable ***/
     realpath(argv[0],buf);
     setenv("SHELL",buf,1);
 
-  
 
     
     /* keep reading commands until the "exit" command or EOF is triggered */
@@ -158,7 +159,7 @@ int main (int argc, char ** argv)
     {
         /* get command line from input */
 
-        printf("%s", prompt); /*** EDIT THIS LINE ***/
+        printf("%s%s", getenv("PWD"),prompt); /*** EDIT THIS LINE ***/
         if (fgets(buf, MAX_BUFFER_SIZE, stdin))                 // get next command line from user or batchfile
         {
             do_job_notification();                              // ensure zombie processes are reaped
@@ -176,7 +177,9 @@ int main (int argc, char ** argv)
 
                 if (!strcmp(cmd_args[0], "cd"))
                 {
-                    puts("I am a duck."); /*** REPLACE THIS LINE WITH YOUR CODE for handling the "cd" command ***/
+                    chdir(cmd_args[1]);
+                    getcwd(buf,MAX_BUFFER_SIZE);
+                    setenv("PWD",buf,1);
                 }
                 
                 else if (!strcmp(cmd_args[0], "envset"))
