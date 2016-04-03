@@ -67,6 +67,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <termios.h>
 #include <unistd.h>
 
@@ -882,7 +883,7 @@ void update_status(void)
     
     do
     {
-        pid = waitpid(WAIT_ANY, &status, WUNTRACED|WNOHANG);
+        pid = waitpid(-1, &status, WUNTRACED|WNOHANG); //Had to change WAIT_ANY to -1 as it wasn't compiling on UCPU2.
     } while (!mark_process_status(pid, status));
 }
 
