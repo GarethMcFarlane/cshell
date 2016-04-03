@@ -67,7 +67,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include <sys/wait.h>
 #include <termios.h>
 #include <unistd.h>
 
@@ -883,7 +882,7 @@ void update_status(void)
     
     do
     {
-        pid = waitpid(-1, &status, WUNTRACED|WNOHANG); //Had to replace WAIT_ANY with -1 as the compiler wasn't recognising it.
+        pid = waitpid(WAIT_ANY, &status, WUNTRACED|WNOHANG);
     } while (!mark_process_status(pid, status));
 }
 
