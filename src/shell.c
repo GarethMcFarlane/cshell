@@ -21,7 +21,7 @@
  
         rbg - performs a phony operation
  
-        rfg - performs a phony operation
+         - performs a phony operation
 
 */
 /*** END OF SECTION MARKER ***/
@@ -78,17 +78,17 @@
 
 /* Custom data types */ /*** DO NOT CHANGE OR REMOVE ANY LINES ***/
 typedef struct process /* Process control block */
-{
+    {
     struct process * next;      /* next process in pipeline */
     char ** argv;               /* for exec */
     pid_t pid;                  /* process ID */
     char completed;             /* true if process has completed */
     char stopped;               /* true if process has stopped */
     int status;                 /* reported status value */
-} process;
+    } process;
 
 typedef struct job     /* Job control block */
-{
+    {
     struct job * next;          /* next active job */
     struct job * prev;          /* previous active job */
     char * command;             /* command line, used for messages */
@@ -97,150 +97,154 @@ typedef struct job     /* Job control block */
     char notified;              /* true if user told about stopped job */
     struct termios tmodes;      /* saved terminal modes */
     int stdin, stdout, stderr;  /* standard i/o channels */
-} job;
+    } job;
 
 /* Global variables */ /***DO NOT CHANGE OR REMOVE ANY LINES ***/
 int fg_flag; /* Foreground execution flag */
-pid_t shell_pgid;
-struct termios shell_tmodes;
-int shell_terminal;
-int shell_is_interactive;
-job * job_list = NULL;
+    pid_t shell_pgid;
+    struct termios shell_tmodes;
+    int shell_terminal;
+    int shell_is_interactive;
+    job * job_list = NULL;
 
 /*** START OF SECTION MARKER ***/
 /***YOU MAY ADD LINES HERE BUT MAY NOT CHANGE OR REMOVE EXISTING LINES ***/
 
 /* Function prototypes*/
-job * add_job(char *);
-process * add_process(job *, process *);
-void cmd_parser(char **, job *);
-void do_job_notification(void);
-job * find_job(pid_t);
-void format_job_info(job *, const char *);
-void free_job(job *);
-void init_shell(int);
-int job_is_stopped(job *);
-int job_is_completed(job *);
-void launch_job(job *, int);
-void launch_process(process *, pid_t, int, int, int, int);
-int mark_process_status(pid_t, int);
-void pause_func(void);
-void put_job_in_background(job *, int);
-void put_job_in_foreground(job *, int);
-void update_status(void);
-void wait_for_job(job *);
+    job * add_job(char *);
+    process * add_process(job *, process *);
+    int cmd_parser(char **, job *);
+    void do_job_notification(void);
+    job * find_job(pid_t);
+    void format_job_info(job *, const char *);
+    void free_job(job *);
+    void init_shell(int);
+    int job_is_stopped(job *);
+    int job_is_completed(job *);
+    void launch_job(job *, int);
+    void launch_process(process *, pid_t, int, int, int, int);
+    int mark_process_status(pid_t, int);
+    void pause_func(void);
+    void put_job_in_background(job *, int);
+    void put_job_in_foreground(job *, int);
+    void update_status(void);
+    void wait_for_job(job *);
 
 /*** END OF SECTION MARKER ***/
 
 /*** NO CHANGES ARE PERMITTED BEYOND THIS POINT EXCEPT WHERE INDICATED ***/
 
 /* Main function */
-int main (int argc, char ** argv)
-{
-    char ** argp;
-    char * cmd_args[MAX_ARGS];
-    char buf[MAX_BUFFER_SIZE];
-    char * prompt = " >> ";
-    char * cwd[MAX_BUFFER_SIZE];
+    int main (int argc, char ** argv)
+    {
+        char ** argp;
+        char * cmd_args[MAX_ARGS];
+        char buf[MAX_BUFFER_SIZE];
+        char * prompt = " ==> ";
 
     /*** INSERT CALL TO init_shell() HERE ***/
-
-  
+        init_shell(1);
 
     /*** INSERT YOUR CODE HERE for setting SHELL environment variable ***/
-    realpath(argv[0],buf);
-    setenv("SHELL",buf,1);
+        realpath(argv[0],buf);
+        setenv("SHELL",buf,1);
 
 
-    
     /* keep reading commands until the "exit" command or EOF is triggered */
 
-    while (1)
-    {
+        while (1)
+        {
         /* get command line from input */
 
         printf("%s%s", getenv("PWD"),prompt); /*** EDIT THIS LINE ***/
+
+
         if (fgets(buf, MAX_BUFFER_SIZE, stdin))                 // get next command line from user or batchfile
         {
+
             do_job_notification();                              // ensure zombie processes are reaped
             /* extract tokens from command line */
 
-                argp = cmd_args;
+            argp = cmd_args;
                 *argp++ = strtok(buf, DELIMITERS);              // fetch the first token
                 while ((*argp = strtok(NULL, DELIMITERS)))      // keep fetching tokens until reaching the NULL token
-            {
-                argp++;
-            }
-                if (cmd_args[0])                                // run if and only if a command has been entered
-            {
-                /* check and respond to command */
-
-                if (!strcmp(cmd_args[0], "cd"))
                 {
-                    chdir(cmd_args[1]);
-                    getcwd(buf,MAX_BUFFER_SIZE);
-                    setenv("PWD",buf,1);
+                    argp++;
                 }
-                
-                else if (!strcmp(cmd_args[0], "envset"))
+                if (cmd_args[0])                                // run if and only if a command has been entered
                 {
-                	if (cmd_args[1] == NULL && cmd_args[2] == NULL) {
-                		puts("Error: expected two arguments");
-                	} else {
+                /* check and respond to command */
+                    if (!strcmp(cmd_args[0], "cd"))
+                    {
+                        chdir(cmd_args[1]);
+                        getcwd(buf,MAX_BUFFER_SIZE);
+                        setenv("PWD",buf,1);
+                    }
+
+                    else if (!strcmp(cmd_args[0], "envset"))
+                    {
+                     if (cmd_args[1] == NULL || cmd_args[2] == NULL) {
+                      puts("Error: expected two arguments");
+                  } else {
                     setenv(cmd_args[1], cmd_args[2], 1);
                 }
-                }
-                
-                else if (!strcmp(cmd_args[0], "envunset"))
-                {
-                	char* var = getenv(cmd_args[1]);
-                	if (var == NULL) {
-                		puts("Variable does not exist.");
-                	} else {
-                		unsetenv(cmd_args[1]);
-                	}
-                }
-                
-                else if (!strcmp(cmd_args[0], "exit"))
-                {
-                    exit(EXIT_SUCCESS); /*** REPLACE THIS LINE WITH YOUR CODE for handling the "exit" command ***/
-                }
-                
-                else if (!strcmp(cmd_args[0], "pause"))
-                {
-                    pause_func();
-                }
-                
-                else if (!strcmp(cmd_args[0], "print"))
-                {
-                   int index = 1;
-                   char line[MAX_BUFFER_SIZE] = "";
-
-                   while (cmd_args[index] != NULL) {
-                   	strcat(line, cmd_args[index]);
-                   	strcat(line, " ");
-                   	index++;
-                   }
-                   puts(line);
-                }
-                
-                else if (!strcmp(cmd_args[0], "rbg"))
-                {
-                    puts("I am a duck."); /*** REPLACE THIS LINE WITH YOUR CODE for handling the "rbg" command ***/
-                }
-                
-                else if (!strcmp(cmd_args[0], "rfg"))
-                {
-                    puts("I am a duck."); /*** REPLACE THIS LINE WITH YOUR CODE for handling the "rfg" command ***/
-                }
-                
-                else
-                {
-                    puts(cmd_args[0]); /*** REPLACE THIS LINE WITH YOUR CODE for handling external command execution ***/
-                                          /*** Note: Your code should contain exactly three lines (one for each of the three function calls) ***/
-                }
             }
+
+            else if (!strcmp(cmd_args[0], "envunset"))
+            {
+               char* var = getenv(cmd_args[1]);
+               if (var == NULL) {
+                  puts("Variable does not exist.");
+              } else {
+                  unsetenv(cmd_args[1]);
+              }
+          }
+
+          else if (!strcmp(cmd_args[0], "exit"))
+          {
+                    exit(EXIT_SUCCESS); /*** REPLACE THIS LINE WITH YOUR CODE for handling the "exit" command ***/
+          }
+
+          else if (!strcmp(cmd_args[0], "pause"))
+          {
+            pause_func();
         }
+
+        else if (!strcmp(cmd_args[0], "print"))
+        {
+           int index = 1;
+           char line[MAX_BUFFER_SIZE] = "";
+
+           while (cmd_args[index] != NULL) {
+            strcat(line, cmd_args[index]);
+            strcat(line, " ");
+            index++;
+        }
+        puts(line);
+    }
+
+    else if (!strcmp(cmd_args[0], "rbg"))
+    {
+        pid_t PGID = (pid_t)cmd_args[1];
+        job * j = find_job(PGID);
+        put_job_in_background(j,1);
+    }
+
+    else if (!strcmp(cmd_args[0], "rfg"))
+    {
+        pid_t PGID = (pid_t)cmd_args[1];
+        job * j = find_job(PGID);
+        put_job_in_foreground(j,1);
+    }
+
+    else
+    {
+        job * j = add_job(buf);
+        int foreground = cmd_parser(cmd_args,j);
+        launch_job(j,foreground);
+    }
+}
+}
 
         else                            // user presses control-D or EOF has been reached
         {
@@ -267,50 +271,88 @@ job * add_job(char * cmd)
     k->stdin = STDIN_FILENO;
     k->stdout = STDOUT_FILENO;
     k->stderr = STDERR_FILENO;
-    
-    /* Add the new job control block to the global job list */
-    return j; /*** REPLACE THIS LINE WITH YOUR BLOCK OF CODE ***/
+    tcgetattr(shell_terminal, &k->tmodes);
+
+    if (!job_list) {
+        job_list = k;
+        job_list->prev = NULL;
+    } else {
+
+        while (!j->next) {
+            j = j->next;
+        }
+
+        j->next = k;
+        k->prev = j;
+    }
+
+    return k;
 }
 
 /* Add a pre-initialised process control block and add it to the specified job list. */
 /* Return the process control block */
 process * add_process(job * j, process * p)
 {
-    return NULL; /*** REPLACE THIS LINE WITH YOUR BLOCK OF CODE ***/
+    process * current_process = j->first_process;
+
+    if (j->first_process == NULL) {
+        j->first_process = p;
+    } else {
+        while (current_process->next != NULL) {
+            current_process = current_process->next;
+        }
+        current_process->next = p;
+    }
+
+    return p;
 }
 
 /* Command line parser */
-void cmd_parser(char ** cmd_args, job * j) /*** YOU MAY MODIFY THIS FUNCTION FOR EXERCISES 2 & 3 ***/
+int cmd_parser(char ** cmd_args, job * j) /*** YOU MAY MODIFY THIS FUNCTION FOR EXERCISES 2 & 3 ***/
 {
     char ** argp = cmd_args; // Working variable for command line tokens
     char ** argvp = NULL;    // Working variable for array of program arguments for process control block */
 
     fg_flag = 1;
-    for (; ; argp++)
-    {
-        /* Initialise a new process control block */
+
+
+
+    while (*argp) {
         process * p = (process *)malloc(sizeof(process));
         p->next = NULL;
+        p->completed = 0;
+        p->stopped = 0;
+        p->status = 0;
         p->argv = (char **)malloc(sizeof(char *)*MAX_ARGS);
         argvp = p->argv;
 
-        break; /*** REPLACE THIS LINE WITH YOUR FOR OR WHILE LOOP FOR PARSING PROGRAM ARGUMENTS HERE ***/
-        puts("Scratch me happy!"); /*** PLEASE REMOVE THIS LINE IF YOU INTEND TO PASS THE UNIT! ***/
+        int index = 0;
+        while(*argp) {
 
-        *argvp = NULL;
-        j->first_process = p; /*** REPLACE THIS LINE WITH A FUNCTION CALL WHEN YOU DO EXERCISE 3 ***/
-        if (!*argp)
-        {
-            break; // No more tokens to process
+            if (!strcmp(*argp,"&") && *(argp+1) == NULL) {
+                fg_flag = 0;
+                argp++;
+                break;
+            }
+            if (!strcmp(*argp,"|")) {
+                argp++;
+                break;
+            }
+            argvp[index] = (char*)malloc(sizeof(char*));
+            strcpy(argvp[index],*argp);
+            index++;
+            argp++;
         }
-        /* IF the current token is an "&" sign */ /*** REPLACE THIS LINE WITH ANOTHER LINE OF CODE ***/
-                                                  /*** Note: The following block of code runs if and ***/
-                                                  /*** only if the "&" symbol has been encountered. ***/
-        {
-            fg_flag = 0; // Flag that the program should run in the background
-            break;
-        }
+
+        argvp[index] = NULL;
+        add_process(j,p);
+
     }
+
+
+return fg_flag;
+
+
 }
 
 /* Notify the user about stopped or terminated jobs.
@@ -322,6 +364,7 @@ void do_job_notification(void)
     /* Update status information for child processes. */
     update_status();
     
+
     jlast = NULL;
     for (j = job_list; j; j = jnext)
     {
@@ -411,7 +454,15 @@ void free_job(job * j)
         p = p->next;
         free(q);
     }
-    free(j);
+    if (j->command)
+    {
+       free(j->command);
+   }
+   else
+   {
+    fprintf(stderr, "WARNING: NULL pointer encountered for job name while trying to free job.\n");
+}
+free(j);
 }
 
 void init_shell(int argc)
@@ -529,7 +580,7 @@ void launch_job(job * j, int foreground)
         if (pid == 0)
         /* This is the child process.  */
             launch_process(p, j->pgid, infile,
-                           outfile, j->stderr, foreground);
+               outfile, j->stderr, foreground);
         else if (pid < 0)
         {
             /* The fork failed.  */
@@ -584,8 +635,8 @@ void launch_job(job * j, int foreground)
 }
 
 void launch_process(process *p, pid_t pgid,
-                    int infile, int outfile, int errfile,
-                    int foreground)
+    int infile, int outfile, int errfile,
+    int foreground)
 {
     pid_t pid;
     
@@ -595,9 +646,9 @@ void launch_process(process *p, pid_t pgid,
          the terminal, if appropriate.
          This has to be done both by the shell and in the individual
          child processes because of potential race conditions.  */
-        pid = getpid();
-        if (pgid == 0)
-        {
+         pid = getpid();
+         if (pgid == 0)
+         {
             pgid = pid;
         }
         setpgid(pid, pgid);
@@ -643,6 +694,8 @@ void launch_process(process *p, pid_t pgid,
  Return 0 if all went well, nonzero otherwise. */
 int mark_process_status(pid_t pid, int status)
 {
+
+
     job *j;
     process *p;
     if (pid > 0)
@@ -660,36 +713,44 @@ int mark_process_status(pid_t pid, int status)
                         p->completed = 1;
                         if (WIFSIGNALED(status))
                             fprintf(stderr, "%d: Terminated by signal %d.\n",
-                                    (int) pid, WTERMSIG (p->status));
+                                (int) pid, WTERMSIG (p->status));
                     }
                     return 0;
                 }
-        fprintf(stderr, "No child process %d.\n", pid);
-        return -1;
-    }
-    else if (pid == 0 || errno == ECHILD)
-    {
+
+                fprintf(stderr, "No child process %d.\n", pid);
+                return -1;
+            }
+            else if (pid == 0 || errno == ECHILD)
+            {
         /* No processes ready to report. */
-        return -1;
-    }
-    else
-    {
+                return -1;
+            }
+            else
+            {
         /* Other weird errors. */
-        perror("waitpid");
-        return -1;
-    }
-}
+                perror("waitpid");
+                return -1;
+            }
+        }
 
 /* Pause the SHELL until the user presses 'ENTER' */
-void pause_func()
-{
+        void pause_func()
+        {
     /*** INSERT YOUR CODE HERE for implementing this function (you may use the GNU website) ***/
-}
+        }
 
 /* Put a job in the background.  If the cont argument is true, send
  the process group a SIGCONT signal to wake it up. */
-void put_job_in_background(job *j, int cont)
-{
+        void put_job_in_background(job *j, int cont)
+        {
+    j->notified = 0; // Enable job suspension notifications
+    for (process * p = j->first_process; p; p = p->next)
+    {
+        p->completed = 0;
+        p->stopped = 0;
+        p->status = 0;
+    }
     /* Send the job a continue signal, if necessary. */
     if (cont)
     {
@@ -703,8 +764,15 @@ void put_job_in_background(job *j, int cont)
 /* Put job j in the foreground.  If cont is nonzero,
  restore the saved terminal modes and send the process group a
  SIGCONT signal to wake it up before we block. */
-void put_job_in_foreground(job * j, int cont)
-{
+ void put_job_in_foreground(job * j, int cont)
+ {
+    j->notified = 0; // Enable job suspension notifications
+    for (process * p = j->first_process; p; p = p->next)
+    {
+        p->completed = 0;
+        p->stopped = 0;
+        p->status = 0;
+    }
     /* Put the job into the foreground. */
     tcsetpgrp(shell_terminal, j->pgid);
     /* Send the job a continue signal, if necessary. */
@@ -751,12 +819,13 @@ void wait_for_job(job * j)
     {
         pid = waitpid(-j->pgid, &status, WUNTRACED);
     } while (!mark_process_status(pid, status)
-           && !job_is_stopped(j)
-           && !job_is_completed(j));
+       && !job_is_stopped(j)
+       && !job_is_completed(j));
 }
 
 /*** IMPLEMENTATIONS OF ANY ADDITIONAL FUNCTIONS BELONG BELOW THIS LINE ***/
 /*** Note: You might not need to use this section. ***/
+
 
 /*** END OF ADDITIONAL FUNCTIONS ***/
 /*** END OF CODE; DO NOT ADD MATERIAL BEYOND THIS POINT ***/
