@@ -14,9 +14,11 @@ Job notification:
 
 Compilation and execution:
 	To compile the program, first navigate to the folder where myshell.c is located.  To compile the program, you must ensure you have a C compiler installed on your system.  The below instructions are for GCC but will be similar for other compilers.  Once you are in the folder, type the following:
+	
 	gcc -w -std=c99 -o cshell cshell.c
 
 	A new file will be created called 'cshell'.  This is the program executable and can be launched by typing:
+	
 	./cshell
 
 Command syntax:
